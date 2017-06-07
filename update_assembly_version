@@ -1,0 +1,52 @@
+#! /bin/bash
+
+function getNextVersion()
+{
+	vArray=(${1//./ })	# .으로 version 구분
+	vCount=${#vArray[@]}
+	nArray=()
+	#for i in "${!array[@]}"; do
+	upper=0
+	for ((i=$vCount; i>0; i--)); do
+		v=${vArray[i-1]}
+		vLen=${#v}
+		next=`expr $v + $upper`
+		if [ $i -eq $vCount ]; then
+			next=`expr $v + 1`
+		fi
+		upper=0
+		nLen=${#next}
+		if [ $nLen -gt $vLen ]; then	# version 상위 버전 증가 확인
+			upper=1
+			nArray[i-1]=0
+		else
+			nArray[i-1]=$next
+		fi
+	done
+	echo ${nArray[0]}.${nArray[1]}.${nArray[2]}.${nArray[3]}
+}
+
+files=$(find -name AssemblyInfo.cs)
+for file in $files; do
+	if [[ "$file" =~ "Test" ]]; then
+		printf "%-70s:\tis skipped\n" "$file"
+		continue
+	fi
+	curVersion=$(grep '^\[assembly: AssemblyVersion("\(.\+\)")]$' $file | sed 's/^\[assembly: AssemblyVersion(\"\(.\+\)\")]$/\1/')
+	nextVersion=$(getNextVersion $curVersion)
+	printf "%-70s:\t%10s\t>\t%10s\n" "$file" "$curVersion" "$nextVersion"
+	sed -i 's/^\[assembly: AssemblyVersion("'$curVersion'")\]$/\[assembly: AssemblyVersion("'$nextVersion'")\]/g' $file
+	sed -i 's/^\[assembly: AssemblyFileVersion("'$curVersion'")\]$/\[assembly: AssemblyFileVersion("'$nextVersion'")\]/g' $file
+done
+
+#echo ""
+#echo -n "Do you want to apply all?(y/n) "
+#read answer
+
+#if [ $answer = "y" -o $answer = "Y" ]; then
+#	for file in $files; do
+#		curVersion=$(grep '^\[assembly: AssemblyVersion("\(.\+\)")]$' $file | sed 's/^\[assembly: AssemblyVersion(\"\(.\+\)\")]$/\1/')
+#		nextVersion=$(getNextVersion $curVersion)
+#		sed -i 's/^\[assembly: AssemblyVersion("'$curVersion'")\]$/\[assembly: AssemblyVersion("'$nextVersion'")\]/g' $file
+#	done
+#fi
