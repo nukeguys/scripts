@@ -26,17 +26,21 @@ function getNextVersion()
 	echo ${nArray[0]}.${nArray[1]}.${nArray[2]}.${nArray[3]}
 }
 
-files=$(find -name AssemblyInfo.cs)
+files=$(find -name *AssemblyInfo.cs)
 for file in $files; do
 	if [[ "$file" =~ "Test" ]]; then
 		printf "%-70s:\tis skipped\n" "$file"
 		continue
 	fi
 	curVersion=$(grep '^\[assembly: AssemblyVersion("\(.\+\)")]$' $file | sed 's/^\[assembly: AssemblyVersion(\"\(.\+\)\")]$/\1/')
-	nextVersion=$(getNextVersion $curVersion)
-	printf "%-70s:\t%10s\t>\t%10s\n" "$file" "$curVersion" "$nextVersion"
-	sed -i 's/^\[assembly: AssemblyVersion("'$curVersion'")\]$/\[assembly: AssemblyVersion("'$nextVersion'")\]/g' $file
-	sed -i 's/^\[assembly: AssemblyFileVersion("'$curVersion'")\]$/\[assembly: AssemblyFileVersion("'$nextVersion'")\]/g' $file
+	#curVersion=$(grep '^\[assembly: AssemblyFileVersion("\(.\+\)")]$' $file | sed 's/^\[assembly: AssemblyFileVersion(\"\(.\+\)\")]$/\1/')
+
+	if [ ! -z "$curVersion" ]; then
+		nextVersion=$(getNextVersion $curVersion)
+		printf "%-70s:\t%10s\t>\t%10s\n" "$file" "$curVersion" "$nextVersion"
+		sed -i 's/^\[assembly: AssemblyVersion("'$curVersion'")\]$/\[assembly: AssemblyVersion("'$nextVersion'")\]/g' $file
+		sed -i 's/^\[assembly: AssemblyFileVersion("'$curVersion'")\]$/\[assembly: AssemblyFileVersion("'$nextVersion'")\]/g' $file
+	fi
 done
 
 #echo ""
